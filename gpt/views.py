@@ -16,7 +16,8 @@ load_dotenv()
 # configure OpenAI
 openai.api_key = os.environ.get('GPT_KEY')
 
-INSTRUCTIONS = """너는 Computer Science Developer 채용 담당자야. 그에 맞는 말투로 답변해줘."""
+INSTRUCTIONS_RESUME = """너는 채용 담당자야. 그에 맞는 말투로 답변해줘. 지금부터 나의 자기소개서를 입력할거야. 이 자기소개서에 기반하여, 인성적인 질문과 기술적인 질문 몇가지를 해줘. 다만, 자기소개서의 형식과는 다른 내용이 오면, 자기소개서를 다시 요청하게끔 해줘."""
+INSTRUCTIONS_JD = """너는 채용 담당자야. 앞으로 내가 보내줄 채용공고에 맞춰서 면접에서 나올법한 질문들을 추천해줘. 다만, 채용공고의 형식과 일치하지 않는 내용이 온다면, '채용공고를 입력해주세요'라고 메세지를 보내줘."""
 
 TEMPERATURE = 0.5
 MAX_TOKENS = 500
@@ -94,7 +95,7 @@ def get_moderation(question):
 
 # Create your views here.
 @csrf_exempt
-def chat(request):
+def chatByResume(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         new_question = data.get('question')
@@ -109,7 +110,7 @@ def chat(request):
             }
             return JsonResponse(response)
 
-        response_text = get_response(INSTRUCTIONS, previous_questions_and_answers, new_question)
+        response_text = get_response(INSTRUCTIONS_RESUME, previous_questions_and_answers, new_question)
         # add the new question and answer to the list of previous questions and answers
         previous_questions_and_answers.append((new_question, response_text))
 
@@ -119,9 +120,68 @@ def chat(request):
         response = {
             'status': 'ok',
             'response': response_text,
+            'previous_QnA' : previous_questions_and_answers,
         }
         
         return JsonResponse(response)
 
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'})
+    
+
+@csrf_exempt
+def chatByJd(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        new_question = data.get('question')
+        previous_questions_and_answers = request.session.get('previous_questions_and_answers', [])
+
+        # check the question is safe
+        errors = get_moderation(new_question)
+        if errors:
+            response = {
+                'status': 'error',
+                'errors': errors,
+            }
+            return JsonResponse(response)
+
+        response_text = get_response(INSTRUCTIONS_JD, previous_questions_and_answers, new_question)
+        # add the new question and answer to the list of previous questions and answers
+        previous_questions_and_answers.append((new_question, response_text))
+
+         # save back to session
+        request.session['previous_questions_and_answers'] = previous_questions_and_answers
+
+        response = {
+            'status': 'ok',
+            'response': response_text,
+            'previous_QnA' : previous_questions_and_answers,
+        }
+        
+        return JsonResponse(response)
+
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'})
+    
+@csrf_exempt
+def feedback(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        new_question = data.get('previous_QnA')
+        # check the question is safe
+        errors = get_moderation(new_question)
+        if errors:
+            response = {
+                'status': 'error',
+                'errors': errors,
+            }
+            return JsonResponse(response)
+        INSTRUCTIONS_FEEDBACK = "['나의 질문 및 답변', 'GPT의 추천 면접 질문']의 형태로 구성된 자료형을 제공할테니, GPT의 추천 면접 질문에 해당하는 나의 답변에 대한 전체적인 피드백을 제공해줘."
+        response_text = get_response(INSTRUCTIONS_FEEDBACK,"",new_question)
+        response = {
+            'status': 'ok',
+            'response': response_text,
+        }
+        return JsonResponse(response)
     else:
         return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'})

@@ -16,9 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from gpt.views import chat
+from gpt.views import chatByResume
+from gpt.views import chatByJd
+from gpt.views import feedback
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('chat/', chat),
+    path('chatResume/', chatByResume),
+    path('chatJd/', chatByJd),
+    path('feedback/',feedback),
 ]

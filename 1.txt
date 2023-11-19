@@ -1,0 +1,58 @@
+player1 0 _ r player1-0
+player1 1 _ r player1-1
+
+player1-0 1 _ r player1-rock
+player1-1 0 _ r player1-scissors
+player1-1 1 _ r player1-paper
+
+player1-rock _ _ r rock-player2
+rock-player2 0 _ r rock-player2-0
+rock-player2 1 _ r rock-player2-1
+
+rock-player2-0 1 _ r rock-player2-rock
+rock-player2-rock _ 0 r rock-player2-rock-2
+rock-player2-rock-2 _ 1 r halt
+
+rock-player2-1 0 _ r rock-player2-scissors
+rock-player2-1 1 _ r rock-player2-paper
+
+rock-player2-scissors _ 0 r rock-player2-scissors-2
+rock-player2-scissors-2 _ 1 r halt
+
+rock-player2-paper _ 1 r rock-player2-paper-2
+rock-player2-paper-2 _ 1 r halt
+
+
+player1-scissors _ _ r scissors-player2
+scissors-player2 0 _ r scissors-player2-0
+scissors-player2 1 _ r scissors-player2-1
+
+scissors-player2-0 1 _ r scissors-player2-rock
+scissors-player2-rock _ 0 r scissors-player2-rock-2
+scissors-player2-rock-2 _ 1 r halt
+
+scissors-player2-1 0 _ r scissors-player2-scissors
+scissors-player2-1 1 _ r scissors-player2-paper
+
+scissors-player2-scissors _ 1 r scissors-player2-scissors-2
+scissors-player2-scissors-2 _ 0 r halt
+
+scissors-player2-paper _ 1 r scissors-player2-paper-2
+scissors-player2-paper-2 _ 0 r halt
+
+player1-paper _ _ r paper-player2
+paper-player2 0 _ r paper-player2-0
+paper-player2 1 _ r paper-player2-1
+
+paper-player2-0 1 _ r paper-player2-rock
+paper-player2-rock _ 1 r paper-player2-rock-2
+paper-player2-rock-2 _ 1 r halt
+
+paper-player2-1 0 _ r paper-player2-scissors
+paper-player2-1 1 _ r paper-player2-paper
+
+paper-player2-scissors _ 1 r paper-player2-scissors-2
+paper-player2-scissors-2 _ 0 r halt
+
+paper-player2-paper _ 1 r paper-player2-paper-2
+paper-player2-paper-2 _ 1 r halt
