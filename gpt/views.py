@@ -16,11 +16,11 @@ load_dotenv()
 # configure OpenAI
 openai.api_key = os.environ.get('GPT_KEY')
 
-INSTRUCTIONS_RESUME = """너는 채용 담당자야. 그에 맞는 말투로 답변해줘. 지금부터 나의 자기소개서를 입력할거야. 이 자기소개서에 기반하여, 인성적인 질문과 기술적인 질문 몇가지를 해줘. 다만, 자기소개서의 형식과는 다른 내용이 오면, 자기소개서를 다시 요청하게끔 해줘."""
-INSTRUCTIONS_JD = """너는 채용 담당자야. 앞으로 내가 보내줄 채용공고에 맞춰서 면접에서 나올법한 질문들을 추천해줘."""
+INSTRUCTIONS_RESUME = """너는 채용 담당자야. 그에 맞는 말투로 답변해줘. 지금부터 나의 자기소개서를 입력할거야. 이 자기소개서에 기반하여, 인성적인 질문과 기술적인 질문을 5개정도 핵심만 요약해서 해줘."""
+INSTRUCTIONS_JD = """너는 채용 담당자야. 앞으로 내가 보내줄 채용공고에 맞춰서 면접에서 나올법한 질문들을 추천해줘. 질문을 한번에 5개정도 핵심만 요약해서 해줘."""
 
 TEMPERATURE = 0.5
-MAX_TOKENS = 500
+MAX_TOKENS = 1000
 FREQUENCY_PENALTY = 0
 PRESENCE_PENALTY = 0.6
 # limits how many questions we include in the prompt
@@ -59,6 +59,34 @@ def get_response(instructions, previous_questions_and_answers, new_question):
         presence_penalty=PRESENCE_PENALTY,
     )
     return completion.choices[0].message.content
+
+def get_response_no_previous(instructions,previous_questions_and_answers):
+    # build the messages
+    messages = [
+        { "role": "system", "content": instructions },
+    ]
+
+    # add the previous questions and answers
+    for question, answer in previous_questions_and_answers[-MAX_CONTEXT_QUESTIONS:]:
+        messages.append({ "role": "user", "content": question })
+        messages.append({ "role": "assistant", "content": answer })
+
+    # add the new question
+    messages.append({ "role": "user", "content": "내가 준 면접관과 면접자 사이의 질문 리스트를 통해서 결과적으로 면접자의 면접이 어땟는지를 간결하게 평가해줘. 어떤 부분이 부족한지 피드백해주면 좋을것 같아." })
+
+
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        temperature=TEMPERATURE,
+        max_tokens=MAX_TOKENS,
+        messages=messages,
+        top_p=1,
+        frequency_penalty=FREQUENCY_PENALTY,
+        presence_penalty=PRESENCE_PENALTY,
+    )
+    return completion.choices[0].message.content
+
 
 
 def get_moderation(question):
@@ -170,15 +198,15 @@ def feedback(request):
         # new_question = data.get('previous_QnA')
         previous_questions_and_answers = request.session.get('previous_questions_and_answers', [])
         # check the question is safe
-        errors = get_moderation(previous_questions_and_answers)
-        if errors:
-            response = {
-                'status': 'error',
-                'errors': errors,
-            }
-            return JsonResponse(response)
+        # errors = get_moderation(previous_questions_and_answers)
+        # if errors:
+        #     response = {
+        #         'status': 'error',
+        #         'errors': errors,
+        #     }
+        #     return JsonResponse(response)
         INSTRUCTIONS_FEEDBACK = "['나의 질문 및 답변', 'GPT의 추천 면접 질문']의 형태로 구성된 자료형을 제공할테니, GPT의 추천 면접 질문에 해당하는 나의 답변에 대한 전체적인 피드백을 제공해줘."
-        response_text = get_response(INSTRUCTIONS_FEEDBACK,"",previous_questions_and_answers)
+        response_text = get_response_no_previous(INSTRUCTIONS_FEEDBACK,previous_questions_and_answers)
         response = {
             'status': 'ok',
             'response': response_text,
