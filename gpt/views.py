@@ -166,10 +166,11 @@ def chatByJd(request):
 @csrf_exempt
 def feedback(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        new_question = data.get('previous_QnA')
+        # data = json.loads(request.body)
+        # new_question = data.get('previous_QnA')
+        previous_questions_and_answers = request.session.get('previous_questions_and_answers', [])
         # check the question is safe
-        errors = get_moderation(new_question)
+        errors = get_moderation(previous_questions_and_answers)
         if errors:
             response = {
                 'status': 'error',
@@ -177,7 +178,7 @@ def feedback(request):
             }
             return JsonResponse(response)
         INSTRUCTIONS_FEEDBACK = "['나의 질문 및 답변', 'GPT의 추천 면접 질문']의 형태로 구성된 자료형을 제공할테니, GPT의 추천 면접 질문에 해당하는 나의 답변에 대한 전체적인 피드백을 제공해줘."
-        response_text = get_response(INSTRUCTIONS_FEEDBACK,"",new_question)
+        response_text = get_response(INSTRUCTIONS_FEEDBACK,"",previous_questions_and_answers)
         response = {
             'status': 'ok',
             'response': response_text,
